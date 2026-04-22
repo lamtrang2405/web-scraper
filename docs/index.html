@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Scraper - GitHub Pages</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: #f6f8fb;
+        color: #111827;
+      }
+      .container {
+        max-width: 900px;
+        margin: 28px auto 36px;
+        padding: 0 16px;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 18px;
+        margin-bottom: 14px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      p {
+        margin: 0 0 10px;
+        line-height: 1.55;
+      }
+      .muted {
+        color: #6b7280;
+      }
+      code {
+        background: #f3f4f6;
+        border-radius: 6px;
+        padding: 1px 6px;
+      }
+      ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      li {
+        margin: 6px 0;
+      }
+      a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+      .actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-block;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        padding: 9px 13px;
+        font-weight: 600;
+      }
+      .btn.primary {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="card">
+        <h1>Web Scraper</h1>
+        <p class="muted">
+          This GitHub Pages site is the public landing page for the scraper project.
+        </p>
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/lamtrang2405/web-scraper" target="_blank" rel="noreferrer">
+            Open Repository
+          </a>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Run the crawler UI locally</h2>
+        <p>GitHub Pages can host static files only. The crawler API runs from Flask on your machine.</p>
+        <ul>
+          <li>Create virtual environment: <code>python3 -m venv .venv</code></li>
+          <li>Install dependencies: <code>source .venv/bin/activate && pip install -r requirements.txt</code></li>
+          <li>Start UI/API: <code>python app.py</code></li>
+          <li>Open local UI: <code>http://127.0.0.1:5000</code></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>What this page is for</h2>
+        <ul>
+          <li>Public intro page for the project.</li>
+          <li>Quick setup steps for local crawling.</li>
+          <li>Simple, automatic deploy from branch <code>main</code>.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

@@ -71,3 +71,11 @@ In the web UI, you only need to paste the novel URL and click **Crawl**.
 - If URL is `https://nangtho.site/truyen/...`, app auto-discovers chapter links and crawls chapter contents.
 - You can paste multiple URLs (one per line or comma-separated).
 - Output is shown in table format and can be downloaded as Excel (`.xlsx`).
+
+## GitHub Pages
+
+This repository includes a GitHub Pages workflow that deploys `docs/` automatically from `main`.
+
+- Workflow file: `.github/workflows/deploy-pages.yml`
+- Pages entry file: `docs/index.html`
+- Expected URL: `https://lamtrang2405.github.io/web-scraper/`
