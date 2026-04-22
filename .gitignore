@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+*.log
+output.json
+story_links.json
+story.json
+chapter.json
+story_with_content.json

@@ -1,0 +1,5 @@
+beautifulsoup4
+requests
+cloudscraper
+flask
+openpyxl
