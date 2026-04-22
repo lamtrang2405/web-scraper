@@ -3,11 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Web Scraper - GitHub Pages</title>
+    <title>Story + Chapter Crawler Tester</title>
     <style>
-      :root {
-        color-scheme: light;
-      }
       * {
         box-sizing: border-box;
       }
@@ -18,104 +15,589 @@
         color: #111827;
       }
       .container {
-        max-width: 900px;
-        margin: 28px auto 36px;
+        max-width: 1050px;
+        margin: 24px auto 40px;
         padding: 0 16px;
       }
-      .card {
+      .panel {
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 12px;
-        padding: 18px;
-        margin-bottom: 14px;
+        padding: 16px;
+        margin-bottom: 16px;
       }
       h1 {
         margin: 0 0 8px;
-        font-size: 28px;
-      }
-      h2 {
-        margin: 0 0 8px;
-        font-size: 18px;
-      }
-      p {
-        margin: 0 0 10px;
-        line-height: 1.55;
+        font-size: 24px;
       }
       .muted {
+        margin: 0;
         color: #6b7280;
       }
-      code {
-        background: #f3f4f6;
-        border-radius: 6px;
-        padding: 1px 6px;
+      .grid {
+        display: grid;
+        gap: 12px;
       }
-      ul {
-        margin: 0;
-        padding-left: 20px;
+      .grid.cols-2 {
+        grid-template-columns: 1fr 1fr;
       }
-      li {
-        margin: 6px 0;
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
       }
-      a {
-        color: #1d4ed8;
-        text-decoration: none;
+      input,
+      textarea {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        outline: none;
       }
-      a:hover {
-        text-decoration: underline;
+      input:focus,
+      textarea:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+      textarea {
+        min-height: 220px;
+        resize: vertical;
+        line-height: 1.5;
       }
       .actions {
-        margin-top: 12px;
         display: flex;
         gap: 10px;
+        margin-top: 14px;
+      }
+      .inline-options {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        margin-top: 12px;
         flex-wrap: wrap;
       }
-      .btn {
-        display: inline-block;
+      .inline-options label {
+        margin: 0;
+      }
+      .inline-options input[type="checkbox"] {
+        width: auto;
+        margin-right: 6px;
+      }
+      .inline-options input[type="number"] {
+        width: 110px;
+      }
+      button {
+        border: 0;
         border-radius: 8px;
-        border: 1px solid #d1d5db;
-        padding: 9px 13px;
+        padding: 10px 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #crawlBtn {
+        background: #2563eb;
+        color: #fff;
+      }
+      #downloadBtn {
+        background: #16a34a;
+        color: #fff;
+        display: none;
+      }
+      #downloadCsvBtn {
+        background: #0891b2;
+        color: #fff;
+        display: none;
+      }
+      .status {
+        margin-top: 10px;
         font-weight: 600;
       }
-      .btn.primary {
-        background: #2563eb;
-        color: white;
-        border-color: #2563eb;
+      .status.error {
+        color: #b91c1c;
+      }
+      .progress-wrap {
+        margin-top: 8px;
+        display: none;
+      }
+      .progress-track {
+        width: 100%;
+        height: 10px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+      }
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #2563eb, #3b82f6);
+        transition: width 0.25s ease;
+      }
+      .progress-text {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      .progress-wrap.error .progress-bar {
+        background: linear-gradient(90deg, #dc2626, #ef4444);
+      }
+      .story-layout {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 16px;
+      }
+      .thumb {
+        width: 100%;
+        aspect-ratio: 3 / 4;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        object-fit: cover;
+        background: #f3f4f6;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .meta-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .meta-item b {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-bottom: 3px;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .chapter-list {
+        margin-top: 10px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 10px;
+      }
+      .chapter-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        background: #fafafa;
+      }
+      .pair-list {
+        margin-top: 10px;
+        border-top: 1px solid #e5e7eb;
+        padding-top: 10px;
+      }
+      pre {
+        margin: 0;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      @media (max-width: 860px) {
+        .grid.cols-2,
+        .story-layout,
+        .meta-grid {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
-    <main class="container">
-      <section class="card">
-        <h1>Web Scraper</h1>
-        <p class="muted">
-          This GitHub Pages site is the public landing page for the scraper project.
-        </p>
-        <div class="actions">
-          <a class="btn primary" href="https://github.com/lamtrang2405/web-scraper" target="_blank" rel="noreferrer">
-            Open Repository
-          </a>
+    <div class="container">
+      <div class="panel">
+        <h1>Story + Chapter Crawler Tester</h1>
+        <p class="muted">Paste 2 links and test extraction quickly.</p>
+      </div>
+
+      <div class="panel">
+        <form id="crawlForm">
+          <div class="grid">
+            <div>
+              <label for="story_url">Story URL</label>
+              <input
+                id="story_url"
+                type="text"
+                placeholder="https://vivutruyen2.net/loi-nhac-nho-cua-dao-si-trong-dem-mua/"
+              />
+            </div>
+            <div>
+              <label for="bulk_pairs">Bulk story URLs (optional)</label>
+              <textarea
+                id="bulk_pairs"
+                style="min-height: 100px"
+                placeholder="One story URL per line&#10;https://site/story-a/&#10;https://site/story-b/"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="crawlBtn" type="submit">Crawl</button>
+            <button id="downloadBtn" type="button">Download XLSX</button>
+            <button id="downloadCsvBtn" type="button">Download CSV</button>
+          </div>
+          <div class="inline-options">
+            <label>
+              <input id="crawl_next_chapters" type="checkbox" checked />
+              Auto crawl next chapters
+            </label>
+            <label for="next_chapters_limit">Max chapters</label>
+            <input id="next_chapters_limit" type="number" min="0" value="10" />
+            <small class="muted">0 = all detected from story page</small>
+          </div>
+          <div id="status" class="status"></div>
+          <div id="crawlProgressWrap" class="progress-wrap">
+            <div class="progress-track">
+              <div id="crawlProgressBar" class="progress-bar"></div>
+            </div>
+            <div id="crawlProgressText" class="progress-text">0%</div>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Story Metadata</h3>
+        <div class="story-layout">
+          <div>
+            <img id="thumb" class="thumb" alt="thumbnail" />
+          </div>
+          <div>
+            <h2 id="storyTitle" style="margin: 0 0 10px">-</h2>
+            <div class="meta-grid">
+              <div class="meta-item">
+                <b>Author</b>
+                <span id="author">-</span>
+              </div>
+              <div class="meta-item">
+                <b>Status</b>
+                <span id="statusText">-</span>
+              </div>
+            </div>
+            <div style="margin-bottom: 10px">
+              <b style="display: block; margin-bottom: 6px; color: #6b7280; font-size: 12px">Genres</b>
+              <div id="genres" class="chips"></div>
+            </div>
+            <div>
+              <b style="display: block; margin-bottom: 6px; color: #6b7280; font-size: 12px">Summary</b>
+              <div id="summary" style="line-height: 1.6; white-space: pre-wrap">-</div>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section class="card">
-        <h2>Run the crawler UI locally</h2>
-        <p>GitHub Pages can host static files only. The crawler API runs from Flask on your machine.</p>
-        <ul>
-          <li>Create virtual environment: <code>python3 -m venv .venv</code></li>
-          <li>Install dependencies: <code>source .venv/bin/activate && pip install -r requirements.txt</code></li>
-          <li>Start UI/API: <code>python app.py</code></li>
-          <li>Open local UI: <code>http://127.0.0.1:5000</code></li>
-        </ul>
-      </section>
+      <div class="panel">
+        <h3>Chapter Content</h3>
+        <div id="chapterTitle" style="font-weight: 700; margin-bottom: 8px">-</div>
+        <textarea id="chapterContent" readonly></textarea>
+        <div class="chapter-list">
+          <div id="chapterCount" style="font-weight: 700; margin-bottom: 8px">Total crawled chapters: 0</div>
+          <div id="chapterList"></div>
+        </div>
+      </div>
 
-      <section class="card">
-        <h2>What this page is for</h2>
-        <ul>
-          <li>Public intro page for the project.</li>
-          <li>Quick setup steps for local crawling.</li>
-          <li>Simple, automatic deploy from branch <code>main</code>.</li>
-        </ul>
-      </section>
-    </main>
+      <div class="panel">
+        <h3>Raw JSON</h3>
+        <pre id="result">{}</pre>
+      </div>
+      <div class="panel">
+        <h3>Batch Pair Results</h3>
+        <div id="pairCount" style="font-weight: 700; margin-bottom: 8px">Total pairs: 0</div>
+        <div id="pairList" class="pair-list"></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("crawlForm");
+      const storyUrlEl = document.getElementById("story_url");
+      const bulkPairsEl = document.getElementById("bulk_pairs");
+      const statusEl = document.getElementById("status");
+      const resultEl = document.getElementById("result");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const downloadCsvBtn = document.getElementById("downloadCsvBtn");
+      const thumbEl = document.getElementById("thumb");
+      const storyTitleEl = document.getElementById("storyTitle");
+      const authorEl = document.getElementById("author");
+      const statusTextEl = document.getElementById("statusText");
+      const genresEl = document.getElementById("genres");
+      const summaryEl = document.getElementById("summary");
+      const chapterTitleEl = document.getElementById("chapterTitle");
+      const chapterContentEl = document.getElementById("chapterContent");
+      const chapterCountEl = document.getElementById("chapterCount");
+      const chapterListEl = document.getElementById("chapterList");
+      const crawlNextChaptersEl = document.getElementById("crawl_next_chapters");
+      const nextChaptersLimitEl = document.getElementById("next_chapters_limit");
+      const pairCountEl = document.getElementById("pairCount");
+      const pairListEl = document.getElementById("pairList");
+      const crawlProgressWrapEl = document.getElementById("crawlProgressWrap");
+      const crawlProgressBarEl = document.getElementById("crawlProgressBar");
+      const crawlProgressTextEl = document.getElementById("crawlProgressText");
+      let latestDownloadXlsxUrl = null;
+      let latestDownloadCsvUrl = null;
+      let crawlProgressTimer = null;
+      const runningFromHttp = window.location.protocol === "http:" || window.location.protocol === "https:";
+      const apiBaseUrl = runningFromHttp ? "" : "http://127.0.0.1:5000";
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function resetView() {
+        storyTitleEl.textContent = "-";
+        authorEl.textContent = "-";
+        statusTextEl.textContent = "-";
+        summaryEl.textContent = "-";
+        chapterTitleEl.textContent = "-";
+        chapterContentEl.value = "";
+        chapterCountEl.textContent = "Total crawled chapters: 0";
+        chapterListEl.innerHTML = "";
+        pairCountEl.textContent = "Total pairs: 0";
+        pairListEl.innerHTML = "";
+        genresEl.innerHTML = "";
+        thumbEl.removeAttribute("src");
+        thumbEl.alt = "thumbnail";
+      }
+
+      function renderGenres(genres) {
+        genresEl.innerHTML = "";
+        if (!Array.isArray(genres) || genres.length === 0) {
+          genresEl.innerHTML = '<span class="chip">No genres</span>';
+          return;
+        }
+        for (const genre of genres) {
+          const node = document.createElement("span");
+          node.className = "chip";
+          node.textContent = genre;
+          genresEl.appendChild(node);
+        }
+      }
+
+      function renderPairResult(pair) {
+        const story = pair?.story || {};
+        const chapter = pair?.chapter || {};
+        const chapters = Array.isArray(pair?.chapters) ? pair.chapters : [];
+        storyTitleEl.textContent = story.title || "-";
+        authorEl.textContent = story.author || "Unknown";
+        statusTextEl.textContent = story.status || "-";
+        summaryEl.textContent = story.summary || "-";
+        chapterTitleEl.textContent = chapter.title || "-";
+        chapterContentEl.value = chapter.content || "";
+        renderGenres(story.genres);
+        chapterCountEl.textContent = `Total crawled chapters: ${chapters.length}`;
+        chapterListEl.innerHTML = "";
+        for (const ch of chapters) {
+          const node = document.createElement("div");
+          node.className = "chapter-item";
+          const title = ch?.title || "Untitled";
+          const url = ch?.source_url || "";
+          const nextUrl = ch?.nextChapterUrl || ch?.note || "";
+          const length = String(ch?.content || "").length;
+          node.innerHTML = `<div><b>${escapeHtml(title)}</b></div><div style="font-size:12px;color:#6b7280">${escapeHtml(url)}</div><div style="font-size:12px;color:#6b7280">next: ${escapeHtml(nextUrl || "-")}</div><div style="font-size:12px;color:#6b7280">content length: ${length}</div>`;
+          chapterListEl.appendChild(node);
+        }
+
+        if (story.thumbnail) {
+          thumbEl.src = story.thumbnail;
+          thumbEl.alt = story.title || "thumbnail";
+        }
+      }
+
+      function renderBatchPairs(pairResults) {
+        pairListEl.innerHTML = "";
+        const pairs = Array.isArray(pairResults) ? pairResults : [];
+        pairCountEl.textContent = `Total pairs: ${pairs.length}`;
+        for (const pair of pairs) {
+          const story = pair?.story || {};
+          const chapters = Array.isArray(pair?.chapters) ? pair.chapters : [];
+          const node = document.createElement("div");
+          node.className = "chapter-item";
+          node.innerHTML = `
+            <div><b>Pair #${escapeHtml(pair?.pair_index || "-")} - ${escapeHtml(story.title || "Untitled story")}</b></div>
+            <div style="font-size:12px;color:#6b7280">story: ${escapeHtml(story.source_url || "")}</div>
+            <div style="font-size:12px;color:#6b7280">chapters crawled: ${chapters.length}</div>
+          `;
+          pairListEl.appendChild(node);
+        }
+      }
+
+      function parseInputUrls() {
+        const bulkText = bulkPairsEl.value.trim();
+        if (bulkText) {
+          const urls = [];
+          const lines = bulkText
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+          for (const line of lines) {
+            if (!line) continue;
+            urls.push(line);
+          }
+          return { urls, rawNovelUrl: lines.join("\n"), error: "" };
+        }
+        const storyUrl = storyUrlEl.value.trim();
+        return {
+          urls: [storyUrl].filter(Boolean),
+          rawNovelUrl: `${storyUrl}`,
+          error: "",
+        };
+      }
+
+      function resolveDownloadUrl(url) {
+        if (!url) return null;
+        if (/^https?:\/\//i.test(url)) return url;
+        if (runningFromHttp) {
+          return `${window.location.origin}${url}`;
+        }
+        return `${apiBaseUrl}${url}`;
+      }
+
+      function clearProgressTimer() {
+        if (crawlProgressTimer) {
+          clearInterval(crawlProgressTimer);
+          crawlProgressTimer = null;
+        }
+      }
+
+      function setProgress(percent, message, isError = false) {
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent)));
+        crawlProgressWrapEl.style.display = "block";
+        crawlProgressWrapEl.classList.toggle("error", Boolean(isError));
+        crawlProgressBarEl.style.width = `${safePercent}%`;
+        crawlProgressTextEl.textContent = message || `${safePercent}%`;
+      }
+
+      function startProgress(totalStories) {
+        clearProgressTimer();
+        let current = 5;
+        const stepMax = Math.max(1, Math.min(6, totalStories));
+        setProgress(current, `Đang crawl... ${current}%`);
+        crawlProgressTimer = setInterval(() => {
+          if (current >= 90) return;
+          const jump = Math.max(1, Math.round(Math.random() * stepMax));
+          current = Math.min(90, current + jump);
+          setProgress(current, `Đang crawl... ${current}%`);
+        }, 350);
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearProgressTimer();
+        setProgress(0, "Chuẩn bị crawl...");
+        statusEl.className = "status";
+        statusEl.textContent = "Crawling...";
+        resultEl.textContent = "{}";
+        downloadBtn.style.display = "none";
+        downloadCsvBtn.style.display = "none";
+        latestDownloadXlsxUrl = null;
+        latestDownloadCsvUrl = null;
+        resetView();
+
+        const parsed = parseInputUrls();
+        if (parsed.error) {
+          statusEl.className = "status error";
+          statusEl.textContent = `Error: ${parsed.error}`;
+          return;
+        }
+        const urls = parsed.urls;
+        if (urls.length < 1) {
+          setProgress(100, "Thất bại", true);
+          statusEl.className = "status error";
+          statusEl.textContent = "Error: provide at least one story URL";
+          return;
+        }
+        startProgress(urls.length);
+        const payload = new FormData();
+        payload.append("novel_url", parsed.rawNovelUrl);
+        payload.append("max_chapters", "0");
+        payload.append("delay", "0.3");
+        if (crawlNextChaptersEl.checked) {
+          payload.append("crawl_next_chapters", "on");
+        }
+        payload.append("next_chapters_limit", nextChaptersLimitEl.value.trim() || "0");
+
+        try {
+          const res = await fetch(`${apiBaseUrl}/crawl`, {
+            method: "POST",
+            body: payload,
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Unknown error");
+          }
+
+          resultEl.textContent = JSON.stringify(data, null, 2);
+          renderPairResult(data.pair_result || {});
+          renderBatchPairs(data.pair_results || (data.pair_result ? [data.pair_result] : []));
+          latestDownloadXlsxUrl = resolveDownloadUrl(data.download_xlsx_url || data.download_url || null);
+          latestDownloadCsvUrl = resolveDownloadUrl(data.download_csv_url || null);
+
+          if (latestDownloadXlsxUrl) {
+            downloadBtn.style.display = "inline-block";
+          }
+          if (latestDownloadCsvUrl) {
+            downloadCsvBtn.style.display = "inline-block";
+          }
+          const pairCount = Array.isArray(data.pair_results) ? data.pair_results.length : data.pair_result ? 1 : 0;
+          clearProgressTimer();
+          setProgress(100, `Hoàn tất (${pairCount} pairs)`);
+          statusEl.textContent = `Done (${pairCount} pairs)`;
+        } catch (error) {
+          clearProgressTimer();
+          setProgress(100, "Crawl lỗi", true);
+          statusEl.className = "status error";
+          const message = String(error?.message || "Unknown error");
+          if (message.includes("Failed to fetch")) {
+            statusEl.textContent =
+              "Error: Cannot reach crawler API. Start server with `python app.py`, then open http://127.0.0.1:5000";
+          } else {
+            statusEl.textContent = `Error: ${message}`;
+          }
+          resultEl.textContent = "{}";
+          resetView();
+        }
+      });
+
+      downloadBtn.addEventListener("click", () => {
+        if (!latestDownloadXlsxUrl) return;
+        const link = document.createElement("a");
+        link.href = latestDownloadXlsxUrl;
+        link.download = "crawl_export.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+
+      downloadCsvBtn.addEventListener("click", () => {
+        if (!latestDownloadCsvUrl) return;
+        const link = document.createElement("a");
+        link.href = latestDownloadCsvUrl;
+        link.download = "crawl_export.csv";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    </script>
   </body>
 </html>
