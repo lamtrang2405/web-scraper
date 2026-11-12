@@ -215,14 +215,11 @@ def crawl():
                     chapter_candidates.append((idx, ch.url))
                 chapter_candidates.sort(key=lambda item: item[0])
 
-            # Add generated fallback candidates to recover cases where detected links fail.
-            if crawl_next_chapters:
-                if next_chapters_limit > 0:
-                    fallback_count = max(next_chapters_limit * 3, 10)
-                elif chapter_candidates:
-                    fallback_count = 0
-                else:
-                    fallback_count = 30
+            # Guessed chapter URLs only when the story page exposes no chapter links.
+            if chapter_candidates:
+                fallback_count = 0
+            elif crawl_next_chapters:
+                fallback_count = max(next_chapters_limit * 3, 10) if next_chapters_limit > 0 else 30
             else:
                 fallback_count = 1
             for idx in range(1, fallback_count + 1):
@@ -337,6 +334,27 @@ def crawl():
             ),
             500,
         )
+
+
+@app.get("/discover-new-stories")
+def discover_new_stories():
+    source = (request.args.get("source") or "https://nangtho.site").strip()
+    limit_raw = (request.args.get("limit") or "").strip()
+    try:
+        limit = int(limit_raw) if limit_raw else 0
+        if limit < 0:
+            return jsonify({"ok": False, "error": "limit must be >= 0"}), 400
+    except ValueError:
+        return jsonify({"ok": False, "error": "limit must be an integer"}), 400
+
+    try:
+        crawler = MeokammapCrawler(client=HttpClient(use_cloudscraper=True))
+        urls = crawler.discover_new_story_links(source, limit=limit)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 502
+    if not urls:
+        return jsonify({"ok": False, "error": "No new stories found."}), 404
+    return jsonify({"ok": True, "urls": urls})
 
 
 @app.get("/health")

@@ -190,9 +190,30 @@ class MeokammapCrawler:
                 result.append(link)
         return result
 
+    def discover_new_story_links(
+        self, home_url: str = "https://nangtho.site", limit: int = 0
+    ) -> list[str]:
+        soup = self._soup(home_url)
+        result = []
+        seen = set()
+        for a in soup.select(".section-stories-new a.story-name[href*='/truyen/']"):
+            href = (a.get("href") or "").strip()
+            if not href:
+                continue
+            full = urljoin(home_url, href)
+            key = _normalize_url_for_compare(full)
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append(full)
+            if limit > 0 and len(result) >= limit:
+                break
+        return result
+
     def parse_story(self, story_url: str) -> Story:
-        if "vivutruyen2.net" in self._host(story_url):
-            return self._parse_story_vivutruyen(story_url)
+        host = self._host(story_url)
+        if "vivutruyen2.net" in host or "nangtho.site" in host:
+            return self._parse_story_from_brief(story_url)
 
         soup = self._soup(story_url)
 
@@ -247,7 +268,7 @@ class MeokammapCrawler:
             chapters=chapters if chapters else None,
         )
 
-    def _parse_story_vivutruyen(self, story_url: str) -> Story:
+    def _parse_story_from_brief(self, story_url: str) -> Story:
         soup = self._soup(story_url)
         brief = self.parse_story_brief(story_url, soup=soup)
         chapters = self.parse_chapter_list(soup, story_url)
@@ -265,8 +286,11 @@ class MeokammapCrawler:
     def parse_story_brief(
         self, story_url: str, soup: Optional[BeautifulSoup] = None
     ) -> StoryBrief:
-        if "vivutruyen2.net" in self._host(story_url):
+        host = self._host(story_url)
+        if "vivutruyen2.net" in host:
             return self._parse_story_brief_vivutruyen(story_url, soup=soup)
+        if "nangtho.site" in host:
+            return self._parse_story_brief_nangtho(story_url, soup=soup)
         story = self.parse_story(story_url)
         return StoryBrief(
             thumbnail=story.cover,
@@ -333,6 +357,74 @@ class MeokammapCrawler:
             source_url=story_url,
         )
 
+    def _parse_story_brief_nangtho(
+        self, story_url: str, soup: Optional[BeautifulSoup] = None
+    ) -> StoryBrief:
+        soup = soup or self._soup(story_url)
+
+        title = self._first_text(soup, ["h3.story-name", ".story-name"])
+        if not title:
+            title = self._first_attr(soup, ["meta[property='og:title']"], "content")
+
+        thumbnail = self._first_attr(soup, [".story-detail__top--image img"], "src")
+        if not thumbnail:
+            thumbnail = self._first_attr(soup, ["meta[property='og:image']"], "content")
+        if thumbnail:
+            thumbnail = urljoin(story_url, thumbnail)
+
+        summary = None
+        desc = soup.select_one(".story-detail__top--desc")
+        if desc:
+            paragraphs = [
+                re.sub(r"\s+", " ", p.get_text(" ", strip=True)).strip()
+                for p in desc.select("p")
+            ]
+            paragraphs = [p for p in paragraphs if p]
+            if paragraphs:
+                summary = "\n\n".join(paragraphs)
+            else:
+                summary = desc.get_text("\n", strip=True) or None
+        if not summary:
+            summary = self._first_attr(
+                soup, ["meta[name='description']", "meta[property='og:description']"], "content"
+            )
+
+        author = None
+        status = None
+        info = soup.select_one(".story-detail__bottom--info")
+        if info:
+            for node in info.select("p"):
+                label_node = node.find("strong")
+                if not label_node:
+                    continue
+                label = label_node.get_text(" ", strip=True).lower().rstrip(":").strip()
+                value = node.get_text(" ", strip=True)
+                value = value.replace(label_node.get_text(" ", strip=True), "", 1).strip()
+                if not value:
+                    continue
+                if label == "tác giả":
+                    author = value
+                elif label == "trạng thái":
+                    status = value
+
+        genres = []
+        seen = set()
+        for a in info.select("a[href*='/the-loai/']") if info else []:
+            text = a.get_text(" ", strip=True)
+            if text and text.lower() not in seen:
+                seen.add(text.lower())
+                genres.append(text)
+
+        return StoryBrief(
+            thumbnail=thumbnail,
+            title=title,
+            genres=genres,
+            status=status,
+            summary=summary,
+            author=author,
+            source_url=story_url,
+        )
+
     def parse_chapter_list(
         self, soup_or_url: BeautifulSoup | str, base_url: Optional[str] = None
     ) -> list[Chapter]:
@@ -383,7 +475,10 @@ class MeokammapCrawler:
             return self._parse_chapter_content_vivutruyen(chapter_url)
 
         soup = self._soup(chapter_url)
-        title = self._first_text(
+        title = None
+        if "nangtho.site" in self._host(chapter_url):
+            title = self._first_text(soup, ["title"])
+        title = title or self._first_text(
             soup,
             ["h1", ".chapter-title", ".reading-content h2", ".entry-title"],
         ) or "Untitled chapter"

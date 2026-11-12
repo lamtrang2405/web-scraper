@@ -72,6 +72,12 @@ In the web UI, you only need to paste the novel URL and click **Crawl**.
 - You can paste multiple URLs (one per line or comma-separated).
 - Output is shown in table format and can be downloaded as Excel (`.xlsx`).
 
+### Crawl new stories from nangtho.site
+
+Click **Crawl truyện mới (nangtho.site)** to crawl the stories listed in the "Truyện Mới" section of `https://nangtho.site`. The UI fetches their story URLs, fills them into **Bulk story URLs** (one per line), and starts a normal crawl. Use the **New stories** field to choose how many to take (default 20, `0` = all).
+
+The button calls `GET /discover-new-stories?limit=N`, which returns `{"ok": true, "urls": [...]}` (or `{"ok": false, "error": "..."}`). `limit=0` returns every story in the section.
+
 ## GitHub Pages
 
 The crawler UI (`index.html` at the repo root) is published by GitHub Pages from the `main` branch root (`.nojekyll` keeps Jekyll from rendering this README instead).

@@ -99,6 +99,14 @@
         background: #2563eb;
         color: #fff;
       }
+      #crawlNewStoriesBtn {
+        background: #7c3aed;
+        color: #fff;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
       #downloadBtn {
         background: #16a34a;
         color: #fff;
@@ -256,6 +264,7 @@
 
           <div class="actions">
             <button id="crawlBtn" type="submit">Crawl</button>
+            <button id="crawlNewStoriesBtn" type="button">Crawl truyện mới (nangtho.site)</button>
             <button id="downloadBtn" type="button">Download XLSX</button>
             <button id="downloadCsvBtn" type="button">Download CSV</button>
           </div>
@@ -267,6 +276,9 @@
             <label for="next_chapters_limit">Max chapters</label>
             <input id="next_chapters_limit" type="number" min="0" value="10" />
             <small class="muted">0 = all detected from story page</small>
+            <label for="new_stories_limit">New stories</label>
+            <input id="new_stories_limit" type="number" min="0" value="20" />
+            <small class="muted">0 = all from "Truyện Mới" on nangtho.site</small>
           </div>
           <div id="status" class="status"></div>
           <div id="crawlProgressWrap" class="progress-wrap">
@@ -354,9 +366,12 @@
       const crawlProgressWrapEl = document.getElementById("crawlProgressWrap");
       const crawlProgressBarEl = document.getElementById("crawlProgressBar");
       const crawlProgressTextEl = document.getElementById("crawlProgressText");
+      const crawlNewStoriesBtn = document.getElementById("crawlNewStoriesBtn");
+      const newStoriesLimitEl = document.getElementById("new_stories_limit");
       let latestDownloadXlsxUrl = null;
       let latestDownloadCsvUrl = null;
       let crawlProgressTimer = null;
+      let pendingCrawlStatus = "";
       const apiBaseUrlEl = document.getElementById("api_base_url");
       const API_BASE_URL_STORAGE_KEY = "crawlerApiBaseUrl";
       const LOCAL_API_BASE_URL = "http://127.0.0.1:5000";
@@ -496,6 +511,16 @@
         };
       }
 
+      function formatApiError(error) {
+        const message = String(error?.message || "Unknown error");
+        if (message.includes("Failed to fetch")) {
+          return `Error: Cannot reach crawler API at ${
+            getApiBaseUrl() || window.location.origin
+          }. Start it with \`python app.py\` and check the Crawler API URL field.`;
+        }
+        return `Error: ${message}`;
+      }
+
       function resolveDownloadUrl(url) {
         if (!url) return null;
         if (/^https?:\/\//i.test(url)) return url;
@@ -532,10 +557,12 @@
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        crawlNewStoriesBtn.disabled = false;
         clearProgressTimer();
         setProgress(0, "Chuẩn bị crawl...");
         statusEl.className = "status";
-        statusEl.textContent = "Crawling...";
+        statusEl.textContent = pendingCrawlStatus || "Crawling...";
+        pendingCrawlStatus = "";
         resultEl.textContent = "{}";
         downloadBtn.style.display = "none";
         downloadCsvBtn.style.display = "none";
@@ -557,6 +584,7 @@
           return;
         }
         startProgress(urls.length);
+        crawlNewStoriesBtn.disabled = true;
         const payload = new FormData();
         payload.append("novel_url", parsed.rawNovelUrl);
         payload.append("max_chapters", "0");
@@ -596,16 +624,37 @@
           clearProgressTimer();
           setProgress(100, "Crawl lỗi", true);
           statusEl.className = "status error";
-          const message = String(error?.message || "Unknown error");
-          if (message.includes("Failed to fetch")) {
-            statusEl.textContent = `Error: Cannot reach crawler API at ${
-              getApiBaseUrl() || window.location.origin
-            }. Start it with \`python app.py\` and check the Crawler API URL field.`;
-          } else {
-            statusEl.textContent = `Error: ${message}`;
-          }
+          statusEl.textContent = formatApiError(error);
           resultEl.textContent = "{}";
           resetView();
+        } finally {
+          crawlNewStoriesBtn.disabled = false;
+        }
+      });
+
+      crawlNewStoriesBtn.addEventListener("click", async () => {
+        const limit = Math.max(0, parseInt(newStoriesLimitEl.value, 10) || 0);
+        crawlNewStoriesBtn.disabled = true;
+        statusEl.className = "status";
+        statusEl.textContent = "Đang lấy danh sách truyện mới...";
+        try {
+          const res = await fetch(`${getApiBaseUrl()}/discover-new-stories?limit=${limit}`);
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Unknown error");
+          }
+          const urls = Array.isArray(data.urls) ? data.urls.filter(Boolean) : [];
+          if (urls.length === 0) {
+            throw new Error("Không tìm thấy truyện mới nào");
+          }
+          bulkPairsEl.value = urls.join("\n");
+          pendingCrawlStatus = `Đã lấy ${urls.length} truyện mới, đang crawl...`;
+          statusEl.textContent = pendingCrawlStatus;
+          form.requestSubmit();
+        } catch (error) {
+          statusEl.className = "status error";
+          statusEl.textContent = formatApiError(error);
+          crawlNewStoriesBtn.disabled = false;
         }
       });
 
