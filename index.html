@@ -247,6 +247,11 @@
                 placeholder="One story URL per line&#10;https://site/story-a/&#10;https://site/story-b/"
               ></textarea>
             </div>
+            <div>
+              <label for="api_base_url">Crawler API URL</label>
+              <input id="api_base_url" type="text" placeholder="Same origin (served by python app.py)" />
+              <small class="muted">GitHub Pages only hosts this UI. Crawling runs on this API (e.g. <code>python app.py</code> on your machine).</small>
+            </div>
           </div>
 
           <div class="actions">
@@ -352,8 +357,35 @@
       let latestDownloadXlsxUrl = null;
       let latestDownloadCsvUrl = null;
       let crawlProgressTimer = null;
+      const apiBaseUrlEl = document.getElementById("api_base_url");
+      const API_BASE_URL_STORAGE_KEY = "crawlerApiBaseUrl";
+      const LOCAL_API_BASE_URL = "http://127.0.0.1:5000";
       const runningFromHttp = window.location.protocol === "http:" || window.location.protocol === "https:";
-      const apiBaseUrl = runningFromHttp ? "" : "http://127.0.0.1:5000";
+      const runningOnGithubPages = window.location.hostname.endsWith("github.io");
+
+      function normalizeApiBaseUrl(value) {
+        return String(value || "").trim().replace(/\/+$/, "");
+      }
+
+      function getApiBaseUrl() {
+        return normalizeApiBaseUrl(apiBaseUrlEl.value);
+      }
+
+      function initApiBaseUrl() {
+        const fromQuery = new URLSearchParams(window.location.search).get("api");
+        const stored = localStorage.getItem(API_BASE_URL_STORAGE_KEY);
+        const fallback = !runningFromHttp || runningOnGithubPages ? LOCAL_API_BASE_URL : "";
+        apiBaseUrlEl.value = normalizeApiBaseUrl(fromQuery ?? stored ?? fallback);
+        if (fromQuery !== null) {
+          localStorage.setItem(API_BASE_URL_STORAGE_KEY, apiBaseUrlEl.value);
+        }
+      }
+
+      initApiBaseUrl();
+      apiBaseUrlEl.addEventListener("change", () => {
+        apiBaseUrlEl.value = getApiBaseUrl();
+        localStorage.setItem(API_BASE_URL_STORAGE_KEY, apiBaseUrlEl.value);
+      });
 
       function escapeHtml(value) {
         return String(value ?? "")
@@ -467,10 +499,7 @@
       function resolveDownloadUrl(url) {
         if (!url) return null;
         if (/^https?:\/\//i.test(url)) return url;
-        if (runningFromHttp) {
-          return `${window.location.origin}${url}`;
-        }
-        return `${apiBaseUrl}${url}`;
+        return `${getApiBaseUrl() || window.location.origin}${url}`;
       }
 
       function clearProgressTimer() {
@@ -538,7 +567,7 @@
         payload.append("next_chapters_limit", nextChaptersLimitEl.value.trim() || "0");
 
         try {
-          const res = await fetch(`${apiBaseUrl}/crawl`, {
+          const res = await fetch(`${getApiBaseUrl()}/crawl`, {
             method: "POST",
             body: payload,
           });
@@ -569,8 +598,9 @@
           statusEl.className = "status error";
           const message = String(error?.message || "Unknown error");
           if (message.includes("Failed to fetch")) {
-            statusEl.textContent =
-              "Error: Cannot reach crawler API. Start server with `python app.py`, then open http://127.0.0.1:5000";
+            statusEl.textContent = `Error: Cannot reach crawler API at ${
+              getApiBaseUrl() || window.location.origin
+            }. Start it with \`python app.py\` and check the Crawler API URL field.`;
           } else {
             statusEl.textContent = `Error: ${message}`;
           }

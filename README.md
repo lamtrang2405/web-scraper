@@ -74,8 +74,9 @@ In the web UI, you only need to paste the novel URL and click **Crawl**.
 
 ## GitHub Pages
 
-This repository includes a GitHub Pages workflow that deploys `docs/` automatically from `main`.
+The crawler UI (`index.html` at the repo root) is published by GitHub Pages from the `main` branch root (`.nojekyll` keeps Jekyll from rendering this README instead).
 
-- Workflow file: `.github/workflows/deploy-pages.yml`
-- Pages entry file: `docs/index.html`
-- Expected URL: `https://lamtrang2405.github.io/web-scraper/`
+- URL: `https://lamtrang2405.github.io/web-scraper/`
+- GitHub Pages only hosts the UI. Crawling still runs on the Flask API, so start `python app.py` on your machine; the page calls `http://127.0.0.1:5000` by default.
+- To use another API host, change the **Crawler API URL** field (saved in the browser) or open `https://lamtrang2405.github.io/web-scraper/?api=https://your-api-host`.
+- The API only accepts cross-origin calls from origins listed in `CORS_ALLOWED_ORIGINS` (comma-separated, default `https://lamtrang2405.github.io`).

@@ -3,19 +3,27 @@ from __future__ import annotations
 
 import csv
 import io
+import os
 import time
 import traceback
 import uuid
 from dataclasses import asdict
 from urllib.parse import urldefrag, urlsplit, urlunsplit
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request, send_from_directory
 from openpyxl import Workbook
 
 from meokammap_crawler import HttpClient, MeokammapCrawler
 
 
 app = Flask(__name__)
+CORS_ALLOWED_ORIGINS = {
+    origin.strip().rstrip("/")
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS", "https://lamtrang2405.github.io"
+    ).split(",")
+    if origin.strip()
+}
 EXPORT_CACHE: dict[str, dict[str, list[dict]]] = {}
 EXPORT_HEADERS = [
     "title",
@@ -123,9 +131,22 @@ def _build_export_rows(items: list[dict], pair_results: list[dict]) -> list[dict
     return export_rows
 
 
+@app.after_request
+def add_cors_headers(response):
+    origin = (request.headers.get("Origin") or "").rstrip("/")
+    if origin in CORS_ALLOWED_ORIGINS:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        # Chrome asks this before a public https page may call a localhost API.
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+        response.headers["Vary"] = "Origin"
+    return response
+
+
 @app.get("/")
 def index():
-    return render_template("index.html")
+    return send_from_directory(app.root_path, "index.html")
 
 
 @app.post("/crawl")
